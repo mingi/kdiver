@@ -30,3 +30,8 @@ Install trinity in guest image:
 $ sudo mount -o offset=1048576 ubuntu_cli.raw /dev/test
 $ sudo cp -r ~/trinity/ /dev/test/home/min/
 $ sudo chroot /dev/test/
+
+
+Host to guest interesting value:
+
+socat TCP-LISTEN:3333,reuseaddr,fork EXEC:./print_field
