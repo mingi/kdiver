@@ -1491,17 +1491,17 @@ int main(int argc, char** argv){
 	for(itCheck = insDisCheck.begin(); itCheck != insDisCheck.end(); ){
 		CheckCheksum* check = *itCheck;
 
-		if(!check->isChecksum()){
+		//if(!check->isChecksum()){
 			vector<Instruction*> checkInss = check->getInstructions();
 
 			instructions.insert(instructions.end(), checkInss.begin(), checkInss.end());
 
 			itCheck++;
-		} else {
-			delete check;
+		//} else {
+		//	delete check;
 
-			itCheck = insDisCheck.erase(itCheck);
-		}
+		//	itCheck = insDisCheck.erase(itCheck);
+		//}
 	}
 
 	//cout << "[Trace Reduce] after insDis count: " << insDisList.size() << endl;
