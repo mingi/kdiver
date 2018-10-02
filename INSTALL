@@ -1,0 +1,26 @@
+Bochs:
+
+./configure --prefix=[PATH_TO_INSTALL] --enable-ne2000 --enable-plugins --enable-cpu-level=6 --enable-pci --enable-fast-function-calls --enable-fpu --enable-cdrom --disable-all-optimizations --enable-x86-64 --enable-instrumentation="instrument/kdiver"
+
+
+
+bochsrc.txt:
+
+ata0-master: type=disk, mode=flat, path="PATH_TO_IMAGE"
+boot: disk
+memory: guest=4096, host=2048
+cpu: count=1, ips=500000000, reset_on_triple_fault=1, ignore_bad_msrs=1, msrs="msrs.def"
+# mouse: enabled=1
+keyboard: keymap=$BXSHARE/keymaps/x11-pc-us.map
+com1: enabled=1, mode=term, dev=/dev/tty9
+ne2k: mac=52:54:00:12:34:56, ethmod=slirp, ethdev=/home/seclab/tests/bochs, script=""
+pci: enabled=1, chipset=i440fx, slot1=ne2k
+
+
+
+Install trinity in guest image:
+
+
+$ sudo mount -o offset=1048576 ubuntu_cli.raw /dev/test
+$ sudo cp -r ~/trinity/ /dev/test/home/min/
+$ sudo chroot /dev/test/
