@@ -120,16 +120,25 @@ void reset_taint() {
 
   print_debug_string("[TAINT RESET] Reset taint lists\n");
 
-  memset(taint_mem_list, -1, _1G*4);
-  memset(taint_reg_list, -1, reg_list_size);
+  if(active){
+    memset(taint_mem_list, -1, _1G*4);
+    memset(taint_reg_list, -1, reg_list_size);
+  }
 
   system("cp ./trace ./trace.txt");
 
-  fp_log = fopen(log_path, "w");
+  if(fp_log == NULL){
+   fp_log = fopen(log_path, "w");
+  }
 }
 
 void stop_taint() {
+  print_debug_string("[TAINT STOP] \n");
+    
+  if(fp_log != NULL){
     fclose(fp_log);
+    fp_log = NULL;
+  }
 }
 
 void destroy() {
@@ -230,7 +239,7 @@ void print_trace_log_imm(BX_CPU_C *pcpu, char* insdis, char* reg1, unsigned int 
   memcpy(op1, (void*)&(pcpu->gen_reg[reg1_idx].rrx), size);
   memcpy(op2, (void*)&imm, size);
 
-  fprintf(fp_log, "{,}.%08x.%08x.\n", *(unsigned int*)op1, *(unsigned int*)op2);
+  fprintf(fp_log, ".%08x.%08x.\n", *(unsigned int*)op1, *(unsigned int*)op2);
 }
 
 // ins mem, reg
@@ -1041,6 +1050,9 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *bx_instr)
       //fprintf(stderr, "pc %x, ecx %x, edx %x, eax %x\n", pc, ecx, edx, eax);
 
       active = 1;
+      if(fp_log == NULL)
+        fp_log = fopen(log_path, "w");
+
       add_tainted_mem_from_source(dst, src, size);
     } 
     // stop taint (tricky)    
