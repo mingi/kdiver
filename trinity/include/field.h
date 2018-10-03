@@ -21,3 +21,6 @@ struct st_field{
   u8** interests;
 };
 
+void start_taint();
+void reset_taint();
+void stop_taint();
