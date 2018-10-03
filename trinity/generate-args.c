@@ -18,6 +18,8 @@
 #include "trinity.h"	// num_online_cpus
 #include "field.h"
 
+#define __NR_mmap 90
+
 char trace_path[] = "/home/min/get_mutate_table";
 char table_file_path[] = "/home/min/field.out";
 
@@ -134,7 +136,7 @@ void read_field_file(u8* field_file, u32* pfield_count){
 
     fields[field_count] = (struct st_field*) malloc(sizeof(struct st_field));
 
-    //printf("%s\n", line);
+    printf("%s\n", line);
 
     ptr = strtok(line, "\t");
 
@@ -172,17 +174,17 @@ void read_field_file(u8* field_file, u32* pfield_count){
 
       fields[field_count]->marker_count = get_values(marker+1, &fields[field_count]->markers, fields[field_count]->size);
       if(fields[field_count]->marker_count > 0){
-        printf("marker count: %d\n", fields[field_count]->marker_count );
+        //printf("marker count: %d\n", fields[field_count]->marker_count );
       }
 
       fields[field_count]->constraint_count = get_values(cons+1, &fields[field_count]->constraints, fields[field_count]->size);
       if(fields[field_count]->constraint_count > 0){
-        printf("cons count: %d\n", fields[field_count]->constraint_count );
+        //printf("cons count: %d\n", fields[field_count]->constraint_count );
       }
 
        fields[field_count]->interest_count = get_values(interest+1, &fields[field_count]->interests, fields[field_count]->size);
        if(fields[field_count]->interest_count > 0){
-        printf("interest count: %d\n", fields[field_count]->interest_count );
+        //printf("interest count: %d\n", fields[field_count]->interest_count );
       }
  
     }
@@ -196,6 +198,20 @@ void read_field_file(u8* field_file, u32* pfield_count){
   return fields;
 }
 
+// void start_taint(){
+// 	//mmap(0x20000000, 0x10000, 7, 0x32, -1, 0);
+// }
+
+void reset_taint(){
+	syscall(__NR_mmap, 0x2f000000, 0x1000, 3, 0x32, -1, 0);
+	//munmap(0x2f000000, 0x1000);
+}
+
+void stop_taint(){
+	syscall(__NR_mmap, 0x2f001000, 0x1000, 3, 0x32, -1, 0);
+	//munmap(0x2f001000, 0x1000);
+}
+
 void get_mutation_table(){
 	char cmd[100];
 	FILE * fp;
@@ -203,25 +219,21 @@ void get_mutation_table(){
     size_t len = 0;
     ssize_t read;
 
-	memset(cmd, NULL, 100);
+	memset(cmd, '\0', 100);
 
-	mmap(0x2f001000, 0x1000, 3, 0x32, -1, 0);
-
-	snprintf(cmd, "%s", trace_path, 100);
+	snprintf(cmd, 80, "%s", trace_path);
 
 	system(cmd);
 
-    fp = fopen(table_file_path, "r");
+    // fp = fopen(table_file_path, "r");
 
-    if (fp == NULL)
-        exit(EXIT_FAILURE);
+    // if (fp == NULL)
+    //     exit(EXIT_FAILURE);
 
-    while ((read = getline(&line, &len, fp)) != -1) {
-        printf("Retrieved line of length %zu :\n", read);
-        printf("%s", line);
-    }
-
-	munmap(0x2f001000, 0x1000);
+    // while ((read = getline(&line, &len, fp)) != -1) {
+    //     printf("Retrieved line of length %zu :\n", read);
+    //     printf("%s", line);
+    // }
 }
 
 static int get_cpu(void)
@@ -244,7 +256,7 @@ static unsigned long handle_arg_address(struct syscallrecord *rec, unsigned int 
 	unsigned long addr = 0;
 
 	addr = 0x20000000;
-	memset((char*)0x20000000, '\xaa', 0x100000);
+	// memset((char*)0x20000000, '\xaa', 0x10000);
 
 	if (argnum == 1)
 		return (unsigned long) 0x20000000;

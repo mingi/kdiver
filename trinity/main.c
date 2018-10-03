@@ -767,8 +767,8 @@ void main_loop(void)
 
 	fork_children();
 
-	mmap((void*)0x20000000, 0x100000, 7, 0x32, -1, 0);
-	memset((char*)0x20000000, '\xaa', 0x100000);
+	mmap((void*)0x20000000, 0x10000, 7, 0x32, -1, 0);
+	// memset((char*)0x20000000, '\xaa', 0x10000);
 
 	while (shm->exit_reason == STILL_RUNNING) {
 
