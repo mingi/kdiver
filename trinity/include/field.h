@@ -3,9 +3,9 @@
 #define u8 unsigned char
 
 u32 get_values(char* values, u8*** pdest, int size);
-void read_field_file(u8* field_file, u32* pfield_count);
+struct st_field** read_field_file(u8* field_file, u32* pfield_count);
  
-struct st_field** fields;
+//struct st_field** fields;
 
 struct st_field{
   u32 start;

@@ -114,6 +114,134 @@ retry:
 	return TRUE;
 }
 
+
+bool deep_syscall(struct childdata *child, int depth)
+{
+ 	struct syscallrecord *rec;
+ 	int ret = FALSE;
+ 	int field_count = 0;
+	struct st_field** l_fields;
+
+ 	rec = &child->syscall;
+
+ 	switch (depth){
+ 		// case 3:
+			// printf("depth: %d\n", depth);
+ 		// 	break;
+ 		case 5:
+			printf("Good! depth: %d\n", depth);
+ 			break;
+ 		case 10:
+			printf("Cool!! depth: %d\n", depth);
+ 			break;
+ 		case 20:
+			printf("Awesome!!! depth: %d\n", depth);
+ 			break;
+ 		default:
+ 			break;
+ 	}
+
+ 	get_mutation_table();
+	
+	l_fields = read_field_file("", &field_count);
+
+	for (int i = 0; i < field_count; i++) {
+		u8 orig[32];
+		if(l_fields[i]==NULL) continue;
+		u32 start = l_fields[i]->start;
+
+		u32 stage_cur_byte = start;
+
+		if(l_fields[i]->start == -1) continue;
+		if(l_fields[i]->size > 8) continue;
+
+		memcpy(orig, 0x20000000+start, l_fields[i]->size);
+
+		u8** values = l_fields[i]->markers;
+		if(values==NULL) continue;
+
+		for(int j=0; j < l_fields[i]->marker_count; j++){
+
+			if(values[j]==NULL) continue;
+
+			memcpy(0x20000000+start, values[j], l_fields[i]->size);
+
+			//printf("\nstart: %d size: %d value: %llx\n", l_fields[i]->start, l_fields[i]->size, *(u64*)values[j]);
+			output_syscall_prefix(rec);
+
+			reset_taint();
+
+			do_syscall(rec);
+
+			stop_taint();
+
+			if(depth < MAX_DEPTH)
+				deep_syscall(child, depth+1);
+
+			output_syscall_postfix(rec);
+			memcpy(0x20000000+start, orig, l_fields[i]->size);
+	  	}
+
+		values = l_fields[i]->constraints;
+		if(values==NULL) continue;
+
+		for(int j=0; j < l_fields[i]->constraint_count; j++){
+
+			if(values[j]==NULL) continue;
+
+			memcpy(0x20000000+start, values[j], l_fields[i]->size);
+
+			//printf("\nstart: %d size: %d value: %llx\n", l_fields[i]->start, l_fields[i]->size, *(u64*)values[j]);
+			output_syscall_prefix(rec);
+
+			reset_taint();
+
+			do_syscall(rec);
+
+			stop_taint();
+
+			if(depth < MAX_DEPTH)
+				deep_syscall(child, depth+1);
+
+			output_syscall_postfix(rec);
+			memcpy(0x20000000+start, orig, l_fields[i]->size);
+	  	}
+
+		values = l_fields[i]->interests;
+		if(values==NULL) continue;
+
+		for(int j=0; j < l_fields[i]->interest_count; j++){
+
+			if(values[j]==NULL) continue;
+
+			memcpy(0x20000000+start, values[j], l_fields[i]->size);
+
+			//printf("\nstart: %d size: %d value: %llx\n", l_fields[i]->start, l_fields[i]->size, *(u64*)values[j]);
+			output_syscall_prefix(rec);
+
+			if(depth < MAX_DEPTH)
+				deep_syscall(child, depth+1);
+			
+			reset_taint();
+
+			do_syscall(rec);
+
+			stop_taint();
+
+			output_syscall_postfix(rec);
+			memcpy(0x20000000+start, orig, l_fields[i]->size);
+	  	}
+	}
+
+	free(l_fields);
+	l_fields = NULL;
+
+ 	ret = TRUE;
+
+	return ret;
+}
+
+
 bool random_syscall(struct childdata *child)
 {
 	struct syscallrecord *rec;
@@ -142,81 +270,9 @@ bool random_syscall(struct childdata *child)
 
 	output_syscall_postfix(rec);
 
-	get_mutation_table();
+
+	deep_syscall(child, 1);
 	
-	system("cat /home/min/field.out");
-
-	read_field_file("", &field_count);
-
-	for (int i = 0; i < field_count; i++) {
-		u8 orig[32];
-		if(fields[i]==NULL) continue;
-		u32 start = fields[i]->start;
-
-		u32 stage_cur_byte = start;
-
-		if(fields[i]->start == -1) continue;
-		if(fields[i]->size > 8) continue;
-
-		memcpy(orig, 0x20000000+start, fields[i]->size);
-
-		u8** values = fields[i]->markers;
-		if(values==NULL) continue;
-
-		for(int j=0; j < fields[i]->marker_count; j++){
-
-			if(values[j]==NULL) continue;
-
-			memcpy(0x20000000+start, values[j], fields[i]->size);
-
-			printf("\nstart: %d size: %d value: %llx\n", fields[i]->start, fields[i]->size, *(u64*)values[j]);
-			output_syscall_prefix(rec);
-
-			do_syscall(rec);
-
-			output_syscall_postfix(rec);
-			memcpy(0x20000000+start, orig, fields[i]->size);
-	  	}
-
-		values = fields[i]->constraints;
-		if(values==NULL) continue;
-
-		for(int j=0; j < fields[i]->constraint_count; j++){
-
-			if(values[j]==NULL) continue;
-
-			memcpy(0x20000000+start, values[j], fields[i]->size);
-
-			printf("\nstart: %d size: %d value: %llx\n", fields[i]->start, fields[i]->size, *(u64*)values[j]);
-			output_syscall_prefix(rec);
-
-			do_syscall(rec);
-
-			output_syscall_postfix(rec);
-			memcpy(0x20000000+start, orig, fields[i]->size);
-	  	}
-
-		values = fields[i]->interests;
-		if(values==NULL) continue;
-
-		for(int j=0; j < fields[i]->interest_count; j++){
-
-			if(values[j]==NULL) continue;
-
-			memcpy(0x20000000+start, values[j], fields[i]->size);
-
-			printf("\nstart: %d size: %d value: %llx\n", fields[i]->start, fields[i]->size, *(u64*)values[j]);
-			output_syscall_prefix(rec);
-
-			do_syscall(rec);
-
-			output_syscall_postfix(rec);
-			memcpy(0x20000000+start, orig, fields[i]->size);
-	  	}
-	}
-	
-	free(fields);
-	fields = NULL;
 
 	handle_syscall_ret(rec);
 
@@ -224,76 +280,3 @@ bool random_syscall(struct childdata *child)
 
 	return ret;
 }
-
-// bool deep_syscall(struct childdata *child)
-// {
-// 	struct syscallrecord *rec;
-// 	int ret = FALSE;
-// 	int field_count = 0;
-
-// 	rec = &child->syscall;
-
-// 	if (set_syscall_nr(rec) == FAIL)
-// 		return FAIL;
-
-// 	memset(rec->postbuffer, 0, POSTBUFFER_LEN);
-
-// 	/* Generate arguments, print them out */
-// 	generate_syscall_args(rec);
-
-// 	output_syscall_prefix(rec);
-
-// 	reset_taint();
-// 	do_syscall(rec);
-// 	stop_taint();
-
-// 	output_syscall_postfix(rec);
-	
-// 	printf("aaaa\n");
-// 	fprintf(stderr, "bbbb\n");
-
-// 	get_mutation_table();
-// 	//sleep(1);
-// 	system("cat /home/min/field.out >&2 ");
-
-// 	read_field_file("", &field_count);
-
-// 	for (int i = 0; i < field_count; i++) {
-// 		u8 orig[32];
-// 		if(fields[i]==NULL) continue;
-// 		u32 start = fields[i]->start;
-
-// 		u32 stage_cur_byte = start;
-
-// 		if(fields[i]->start == -1) continue;
-// 		if(fields[i]->size > 8) continue;
-
-// 		memcpy(orig, 0x20000000+start, fields[i]->size);
-
-// 		u8** values = fields[i]->interests;
-// 		if(values==NULL) continue;
-
-// 		for(int j=0; j < fields[i]->interest_count; j++){
-
-// 			if(values[j]==NULL) continue;
-
-// 			memcpy(0x20000000+start, values[j], fields[i]->size);
-
-// 			printf("\nstart: %d size: %d value: %llx\n", fields[i]->start, fields[i]->size, *(u64*)values[j]);
-// 			output_syscall_prefix(rec);
-
-// 			do_syscall(rec);
-
-// 			output_syscall_postfix(rec);
-// 			memcpy(0x20000000+start, orig, fields[i]->size);
-// 	  	}
-// 	}
-	
-// 	fields = NULL;
-
-// 	handle_syscall_ret(rec);
-
-// 	ret = TRUE;
-
-// 	return ret;
-// }

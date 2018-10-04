@@ -107,10 +107,10 @@ u32 get_values(char* values, u8*** pdest, int size){
   return count;
 }
 
-void read_field_file(u8* field_file, u32* pfield_count){
+struct st_field** read_field_file(u8* field_file, u32* pfield_count){
   FILE* fp;
   u8* line = NULL;
-  //struct st_field** fields = NULL;
+  struct st_field** fields = NULL;
 
   size_t len = 0;
   ssize_t read;
