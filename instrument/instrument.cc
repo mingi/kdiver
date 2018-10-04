@@ -237,7 +237,17 @@ void print_trace_log(BX_CPU_C *pcpu, char* insdis, char* reg1, char* reg2, size_
   memcpy(op1, (void*)&(pcpu->gen_reg[reg1_idx].rrx), size);
   memcpy(op2, (void*)&(pcpu->gen_reg[reg2_idx].rrx), size);
 
-  fprintf(fp_log, ".%08x.%08x.\n", op1, op2);
+  fprintf(fp_log, ".");
+
+  for(int i=0; i<4; i++)
+    fprintf(fp_log, "%02x", (unsigned char) op1[i]);
+
+  fprintf(fp_log, ".");
+
+  for(int i=0; i<4; i++)
+    fprintf(fp_log, "%02x", (unsigned char) op2[i]);
+
+  fprintf(fp_log, ".\n");
 }
 
 // ins reg, mem
@@ -260,7 +270,12 @@ void print_trace_log(BX_CPU_C *pcpu, char* insdis, char* reg1, bx_address addr2,
   memcpy(op1, (void*)&(pcpu->gen_reg[reg1_idx].rrx), size);
   read_lin_mem(pcpu, addr2, size, op2);
 
-  fprintf(fp_log, ".%08x.%08x.\n", *(unsigned int*)op1, *(unsigned int*)op2);
+  fprintf(fp_log, ".");
+
+  for(int i=0; i<4; i++)
+    fprintf(fp_log, "%02x", (unsigned char) op1[i]);
+
+  fprintf(fp_log, ".%08x.\n", *(unsigned int*)op2);
 }
 
 // ins reg, imm
@@ -282,7 +297,18 @@ void print_trace_log_imm(BX_CPU_C *pcpu, char* insdis, char* reg1, unsigned int 
   memcpy(op1, (void*)&(pcpu->gen_reg[reg1_idx].rrx), size);
   memcpy(op2, (void*)&imm, size);
 
-  fprintf(fp_log, ".%08x.%08x.\n", *(unsigned int*)op1, *(unsigned int*)op2);
+  fprintf(fp_log, ".");
+
+  for(int i=0; i<4; i++)
+    fprintf(fp_log, "%02x", (unsigned char) op1[i]);
+
+  fprintf(fp_log, ".");
+
+  for(int i=0; i<4; i++)
+    fprintf(fp_log, "%02x", (unsigned char) op2[i]);
+
+  fprintf(fp_log, ".\n");
+
 }
 
 // ins mem, reg
@@ -305,7 +331,12 @@ void print_trace_log(BX_CPU_C *pcpu, char* insdis, bx_address addr1, char* reg2,
   read_lin_mem(pcpu, addr1, size, op1);
   memcpy(op2, (void*)&(pcpu->gen_reg[reg2_idx].rrx), size);
 
-  fprintf(fp_log, ".%08x.%08x.\n", *(unsigned int*)op1, *(unsigned int*)op2);
+  fprintf(fp_log, ".%08x.", *(unsigned int*)op1);
+
+  for(int i=0; i<4; i++)
+    fprintf(fp_log, "%02x", (unsigned char) op2[i]);
+
+  fprintf(fp_log, ".\n");
 }
 
 // ins mem, imm
@@ -324,7 +355,12 @@ void print_trace_log_imm(BX_CPU_C *pcpu, char* insdis, bx_address addr1, unsigne
   read_lin_mem(pcpu, addr1, size, op1);
   memcpy(op2, (void*)&imm, size);
 
-  fprintf(fp_log, ".%08x.%08x.\n", *(unsigned int*)op1, *(unsigned int*)op2);
+  fprintf(fp_log, ".%08x.", *(unsigned int*)op1);
+
+  for(int i=0; i<4; i++)
+    fprintf(fp_log, "%02x", (unsigned char) op2[i]);
+
+  fprintf(fp_log, ".\n");
 }
 
 void print_debug_string(char* str){
