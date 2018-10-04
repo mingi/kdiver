@@ -42,18 +42,23 @@
 
 #define START_COVERAGE  0x2f002000
 #define STOP_COVERAGE   0x2f003000
+#define START_LOG_MEM  0x2f004000
+#define STOP_LOG_MEM   0x2f005000
 
 const char* log_path = "./trace";
 const char* coverage_path = "./coverage.info";
+const char* mem_log_path = "./taint_mem.info";
 
 FILE *fp_log;
 FILE *fp_coverage;
+FILE *fp_mem;
 
 // Use this variable to turn on/off collection of instrumentation data
 // If you are not using the debugger to turn this on/off, then possibly
 // start this at 1 instead of 0.
 static bx_bool active = 0;
 static bx_bool active_coverage = 0;
+static bx_bool active_mem = 0;
 
 static disassembler bx_disassembler;
 
@@ -132,6 +137,21 @@ void stop_branch_coverage(){
   print_debug_string("[COVERAGE] stop branch coverage\n");
   fclose(fp_coverage);
   fp_coverage = NULL;
+}
+
+void start_log_mem(){
+  const size_t _1G = 1024 * 1024 * 1024LL; 
+
+  print_debug_string("[MEM] start log memory\n");
+  fp_mem = fopen(mem_log_path, "w");
+
+  memset(branch_list, NULL, _1G);
+}
+
+void stop_log_mem(){
+  print_debug_string("[MEM] stop log memory\n");
+  fclose(fp_mem);
+  fp_mem = NULL;
 }
 
 void initialize() {
@@ -1156,6 +1176,13 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *bx_instr)
       active_coverage = 0;
       stop_branch_coverage();
     }
+    else if(src == START_LOG_MEM){
+      active_mem = 1;
+      start_log_mem();
+    }
+    else if(src == STOP_LOG_MEM){
+      active_mem = 0;
+      stop_log_mem();    }
   }
 
   if (!active) return;
