@@ -229,7 +229,7 @@ void print_trace_log(BX_CPU_C *pcpu, char* insdis, char* reg1, char* reg2, size_
 
   print_debug_string("[Print Trace] OP REG REG\n");
 
-  fprintf(fp_log, "0x0.%s.N.", insdis);
+  fprintf(fp_log, "0x%x.%s.N.", pcpu->prev_rip, insdis);
 
   print_reg_offset(reg1_idx, size);
   print_reg_offset(reg2_idx, size);
@@ -262,7 +262,7 @@ void print_trace_log(BX_CPU_C *pcpu, char* insdis, char* reg1, bx_address addr2,
 
   print_debug_string("[Print Trace] OP REG MEM\n");
 
-  fprintf(fp_log, "0x0.%s.N.", insdis);
+  fprintf(fp_log, "0x%x.%s.N.", pcpu->prev_rip, insdis);
 
   print_reg_offset(reg1_idx, size);
   print_mem_offset(addr2, size);
@@ -290,7 +290,7 @@ void print_trace_log_imm(BX_CPU_C *pcpu, char* insdis, char* reg1, unsigned int 
 
   print_debug_string("[Print Trace] OP REG MEM\n");
 
-  fprintf(fp_log, "0x0.%s.N.", insdis);
+  fprintf(fp_log, "0x%x.%s.N.", pcpu->prev_rip, insdis);
 
   print_reg_offset(reg1_idx, size);
 
@@ -323,7 +323,7 @@ void print_trace_log(BX_CPU_C *pcpu, char* insdis, bx_address addr1, char* reg2,
 
   print_debug_string("[Print Trace] OP MEM REG\n");
 
-  fprintf(fp_log, "0x0.%s.N.", insdis);
+  fprintf(fp_log, "0x%x.%s.N.", pcpu->prev_rip, insdis);
 
   print_mem_offset(addr1, size);
   print_reg_offset(reg2_idx, size);
@@ -348,7 +348,7 @@ void print_trace_log_imm(BX_CPU_C *pcpu, char* insdis, bx_address addr1, unsigne
   
   print_debug_string("[Print Trace] OP MEM REG\n");
 
-  fprintf(fp_log, "0x0.%s.N.", insdis);
+  fprintf(fp_log, "0x%x.%s.N.", pcpu->prev_rip, insdis);
 
   print_mem_offset(addr1, size);
 
