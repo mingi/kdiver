@@ -412,6 +412,10 @@ void add_tainted_mem_from_source(unsigned int start, unsigned int source, size_t
 
   for (int i=0; i < size; i++){
     //fprintf(stderr, "[TAINT MEM SOURCE] 0x%x tainted by 0x%x\n", LIN_TO_IDX(start+i), SRC_TO_OFF(source)+i);
+
+    if(active_mem)
+      fprintf(fp_mem, "0x%x\n", LIN_TO_IDX(start+i));
+
     taint_mem_list[LIN_TO_IDX(start+i)] = SRC_TO_OFF(source) + i;
   }
 
@@ -424,6 +428,9 @@ void add_tainted_mem_mem(unsigned int dst, unsigned int src, size_t size){
   //fprintf(stderr, "[TAINT MEM MEM] dst 0x%x, src, 0x%x, size 0x%x\n", dst, src, size);
 
   for (int i=0; i < size; i++){
+    if(active_mem)
+      fprintf(fp_mem, "0x%x\n", LIN_TO_IDX(dst+i));
+
     taint_mem_list[LIN_TO_IDX(dst+i)] = taint_mem_list[LIN_TO_IDX(src+i)];
   }
 }
@@ -439,6 +446,9 @@ void add_tainted_mem_reg(unsigned int dst, char* reg_src, size_t size){
   fprintf(stderr, "[TAINT MEM REG] dst 0x%x, src %s, size 0x%x\n", dst, reg_src, size);
 
   for (int i = 0; i < size; i++){
+    if(active_mem)
+      fprintf(fp_mem, "0x%x\n", LIN_TO_IDX(dst+i));
+
     taint_mem_list[LIN_TO_IDX(dst+i)] = taint_reg_list[src_idx*MAX_REG_SIZE + i];
     fprintf(stderr, "\t0x%x tainted by 0x%x\n", LIN_TO_IDX(dst+i), taint_reg_list[src_idx*MAX_REG_SIZE + i]);
   }
