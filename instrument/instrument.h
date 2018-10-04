@@ -51,6 +51,7 @@ void bx_instr_lin_access(unsigned cpu, bx_address lin, bx_phy_address phy, unsig
 void add_tainted_mem(unsigned int start, unsigned int size);
 unsigned int get_reg_idx(char* reg);
 void print_debug_string(char* str);
+void print_debug_string_int(char* str, int);
 
 #define EAX_INDEX 0
 #define ECX_INDEX 1

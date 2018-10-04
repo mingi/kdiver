@@ -38,15 +38,22 @@
 #define MAX_REG_SIZE 4
 
 #define COPY_FROM_USER_ADDR 0xc13ab0c0
-#define RET_SYSCALL_MMAP 0xc11a2b59
+#define RET_SYSCALL_MMAP    0xc11a2b59
+
+#define START_COVERAGE  0x2f002000
+#define STOP_COVERAGE   0x2f003000
 
 const char* log_path = "./trace";
+const char* coverage_path = "./coverage.info";
+
 FILE *fp_log;
+FILE *fp_coverage;
 
 // Use this variable to turn on/off collection of instrumentation data
 // If you are not using the debugger to turn this on/off, then possibly
 // start this at 1 instead of 0.
 static bx_bool active = 0;
+static bx_bool active_coverage = 0;
 
 static disassembler bx_disassembler;
 
@@ -88,8 +95,44 @@ unsigned int *taint_mem_list;
 unsigned int *taint_reg_list;
 unsigned int taint_list_offset;
 
+unsigned char *branch_list;
+
 #define LIN_TO_IDX(lin) ((lin) - 0xC0000000)
 #define SRC_TO_OFF(lin) ((lin) & 0xFFFFFFF)
+
+bool mark_branch_explore(bx_address address){
+  if(address < 0xC0000000) return false;
+
+  if (branch_list[LIN_TO_IDX(address)] == 1){
+    return false;
+  }
+  else{
+    print_debug_string_int("[Branch] new branch 0x%x", address);
+    print_debug_string(" explored\n");
+
+    if(fp_coverage != NULL){
+      fprintf(fp_coverage, "0x%x\n", address);
+    }
+
+    branch_list[LIN_TO_IDX(address)] = 1;
+    return true;
+  }
+}
+
+void start_branch_coverage(){
+  const size_t _1G = 1024 * 1024 * 1024LL; 
+
+  print_debug_string("[COVERAGE] start branch coverage\n");
+  fp_coverage = fopen(coverage_path, "w");
+
+  memset(branch_list, NULL, _1G);
+}
+
+void stop_branch_coverage(){
+  print_debug_string("[COVERAGE] stop branch coverage\n");
+  fclose(fp_coverage);
+  fp_coverage = NULL;
+}
 
 void initialize() {
   fp_log = fopen(log_path, "w");
@@ -118,7 +161,7 @@ void reset_taint() {
   const size_t _1G = 1024 * 1024 * 1024LL; 
   const size_t reg_list_size = 8 * 4 * 4LL; // num of reg * reg size * sizeof(uint32)
 
-  print_debug_string("[TAINT RESET] Reset taint lists\n");
+  //print_debug_string("[TAINT RESET] Reset taint lists\n");
 
   if(active){
     memset(taint_mem_list, -1, _1G*4);
@@ -133,7 +176,7 @@ void reset_taint() {
 }
 
 void stop_taint() {
-  print_debug_string("[TAINT STOP] \n");
+  //print_debug_string("[TAINT STOP] \n");
     
   if(fp_log != NULL){
     fclose(fp_log);
@@ -539,6 +582,8 @@ void print_mem_access(const instruction_t *i){
 
 void bx_instr_initialize(unsigned cpu)
 {
+  const size_t _1G = 1024 * 1024 * 1024LL; 
+
   assert(cpu < BX_SMP_PROCESSORS);
 
   if (instruction == NULL)
@@ -546,6 +591,9 @@ void bx_instr_initialize(unsigned cpu)
 
   if(taint_mem_list == NULL)
     initialize();
+
+  if (branch_list == NULL)
+    branch_list = (unsigned char*) malloc(_1G);
 
   fprintf(stderr, "Initialize cpu %u\n", cpu);
 }
@@ -1064,6 +1112,14 @@ void bx_instr_before_execution(unsigned cpu, bxInstruction_c *bx_instr)
       active = 0;
       stop_taint();
     }
+    else if(src == START_COVERAGE){
+      active_coverage = 1;
+      start_branch_coverage();
+    }
+    else if(src == STOP_COVERAGE){
+      active_coverage = 0;
+      stop_branch_coverage();
+    }
   }
 
   if (!active) return;
@@ -1096,6 +1152,9 @@ void bx_instr_after_execution(unsigned cpu, bxInstruction_c *bx_instr)
 
 static void branch_taken(unsigned cpu, bx_address new_eip)
 {
+  if(active_coverage)
+   mark_branch_explore(new_eip);
+
   if (!active || !instruction[cpu].ready) return;
 
   instruction[cpu].is_branch = 1;
@@ -1103,6 +1162,7 @@ static void branch_taken(unsigned cpu, bx_address new_eip)
 
   // find linear address
   instruction[cpu].target_linear = BX_CPU(cpu)->get_laddr(BX_SEG_REG_CS, new_eip);
+
 }
 
 void bx_instr_cnear_branch_taken(unsigned cpu, bx_address branch_eip, bx_address new_eip)
